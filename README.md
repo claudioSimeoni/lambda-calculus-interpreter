@@ -1,2 +1,2 @@
-# lambda_calculus_interpreter
+# lambda-calculus-interpreter
 A simple lambda calculus interpreter.
