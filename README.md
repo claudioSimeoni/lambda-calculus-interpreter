@@ -10,3 +10,4 @@ todo list:
 - [ ] factorial function and recursion
 - [ ] optimization (like intermediate reduction)
 - [ ] smart parenthesis parser
+- [ ] detect loops in fullReduce
