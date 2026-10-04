@@ -20,18 +20,28 @@ showExpr (Eapp e1 e2) = "(" ++ showExpr e1 ++ " " ++ showExpr e2 ++ ")"
 
 -- converts String to Expr
 readExpr :: String -> Expr
-readExpr ('\\' : e) = Eabs (take len e) (readExpr (drop (len + 1) e))
-    where len = length $ takeWhile (\c -> c /= '.') e
-readExpr ('(' : e) = 
-    Eapp (readExpr (take (len - 1) e)) (readExpr (init (drop len e)))
-    where prefPar (accs, _) c = 
-            (accs + case c of 
-                        '(' -> 1
-                        ')' -> -1
-                        c -> 0, 
-            c)
-          len = length $ takeWhile (\(s, c) -> s /= 0 || c /= ' ') (scanl prefPar (0, '#') e)
-readExpr s = Evar s
+readExpr e
+    | length es > 1  = foldl1 Eapp (map readExpr es)
+    | head eh == '('  = readExpr $ tail $ init eh
+    | head eh == '\\' = let (var, rest) = span (/= '.') eh
+                        in  Eabs (tail var) (readExpr (tail rest))
+    | otherwise       = Evar eh
+    where es@(eh : _) = splitApplication e
+
+-- takes a string and splits at all function application points
+splitApplication :: String -> [String]
+splitApplication [] = []
+splitApplication (' ' : xs) = splitApplication xs
+splitApplication x = first : splitApplication rest
+    where prefPar (acc, _) c = 
+            ( acc + case c of
+                '(' -> 1
+                ')' -> -1
+                c   -> 0,
+              c
+            )
+          len = length $ takeWhile (/= (0, ' ')) (scanl prefPar (0, '#') x)
+          (first, rest) = splitAt (len - 1) x
 
 -- autoexplicative
 isReducible :: Expr -> Bool
@@ -47,7 +57,6 @@ findAndReplace (Evar v1) e2 var
     | otherwise = Evar v1
 findAndReplace (Eabs v1 e1) e2 var = Eabs v1 (findAndReplace e1 e2 var)
 findAndReplace (Eapp e11 e12) e2 var = Eapp (findAndReplace e11 e2 var ) (findAndReplace e12 e2 var)
-
 
 -- beta reduction
 reduce :: Expr -> Expr
