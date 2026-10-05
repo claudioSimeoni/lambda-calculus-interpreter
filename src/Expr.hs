@@ -9,17 +9,21 @@ module Expr (
 
 import qualified Data.Map as Map
 
+data Var = Var String Int deriving (Eq, Ord)
 
-data Expr = Evar (String, Int) | Eabs (String, Int) Expr | Eapp Expr Expr
+instance Show Var where
+    show (Var var num) = var ++ (show num)
+
+data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
 
 instance Show Expr where
-    show = showExpr
+    show e = showExpr $ label e Map.empty
 
 
 -- converts Expr to String
 showExpr :: Expr -> String
-showExpr (Evar var) = fst var
-showExpr (Eabs var expr) = "\\" ++ fst var ++ "." ++ showExpr expr
+showExpr (Evar var) = show var
+showExpr (Eabs var expr) = "\\" ++ show var ++ "." ++ showExpr expr
 showExpr (Eapp e1 e2) = "(" ++ showExpr e1 ++ " " ++ showExpr e2 ++ ")"
 
 -- converts String to Expr
@@ -28,8 +32,8 @@ readExpr e
     | length es > 1  = foldl1 Eapp (map readExpr es)
     | head eh == '('  = readExpr $ tail $ init eh
     | head eh == '\\' = let (var, rest) = span (/= '.') eh
-                        in  Eabs (tail var, 0) (readExpr (tail rest))
-    | otherwise       = Evar (eh, 0)
+                        in  Eabs (Var (tail var) 0) (readExpr (tail rest))
+    | otherwise       = Evar (Var eh 0)
     where es@(eh : _) = splitApplication e
 
 -- takes a string and splits at all function application points
@@ -55,7 +59,7 @@ isReducible (Eapp (Eabs var e1) e2) = True
 isReducible (Eapp e1 e2) = isReducible e1 || isReducible e2
 
 -- finds occurences of var in e1 and substitutes with e2
-findAndReplace :: Expr -> Expr -> (String, Int) -> Expr
+findAndReplace :: Expr -> Expr -> Var -> Expr
 findAndReplace (Evar v1) e2 var
     | v1 == var = e2
     | otherwise = Evar v1
@@ -94,12 +98,12 @@ extrMaybeInt Nothing = 0
 extrMaybeInt (Just val) = val
 
 -- assigns a label to each variable in an Expr
-label :: Expr -> Map.Map (String, Int) Int -> Expr
-label (Evar var) m = Evar (fst var, val)
-                        where l = Map.lookup var m
-                              val = extrMaybeInt l
-label (Eabs var e) m = Eabs (fst var, val) (label e newm)
-                        where newm = (Map.insertWith (+) var 1 m)
-                              l = Map.lookup var newm
-                              val = extrMaybeInt l
+label :: Expr -> Map.Map Var Int -> Expr
+label (Evar var@(Var v num)) m   = Evar (Var v val)
+    where l = Map.lookup var m
+          val = extrMaybeInt l
+label (Eabs var@(Var v num) e) m = Eabs (Var v val) (label e newm)
+    where newm = (Map.insertWith (+) var 1 m)
+          l = Map.lookup var newm
+          val = extrMaybeInt l
 label (Eapp e1 e2) m = Eapp (label e1 m) (label e2 m)
