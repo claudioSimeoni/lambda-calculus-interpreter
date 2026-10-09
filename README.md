@@ -3,11 +3,12 @@ A simple lambda calculus interpreter.
 
 todo list:
 
-- [ ] renaming variables when applying beta reduction
-- [ ] code modularization
-- [ ] logical operators
+- [x] renaming variables when applying beta reduction
+- [ ] code modularization (cabal) -- claudio
+- [ ] logical operators -- james
 - [ ] arithmetics
 - [ ] factorial function and recursion
 - [ ] optimization (like intermediate reduction)
-- [ ] smart parenthesis parser
+- [x] smart parenthesis parser
 - [ ] detect loops in fullReduce
+- [ ] tests
