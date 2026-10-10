@@ -21,7 +21,7 @@ instance Show Var where
 
 data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
 instance Show Expr where
-    show e = showExpr (label e Map.empty)
+    show e = showExpr e
 
 --------------------------------------------------------------------------------------
 -- showExpr and readExpr
@@ -101,7 +101,7 @@ label (Evar var@(Var v num)) m = Evar (Var v val)
     val = extrMaybeInt l
 label (Eabs var@(Var v num) e) m = Eabs (Var v val) (label e newm)
   where
-    newm = Map.insertWith (+) var 1 m
+    newm = (Map.insertWith (+) var 1 m)
     l = Map.lookup var newm
     val = extrMaybeInt l
 label (Eapp e1 e2) m = Eapp (label e1 m) (label e2 m)
