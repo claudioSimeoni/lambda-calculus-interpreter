@@ -67,7 +67,7 @@ splitApplication x = first : splitApplication rest
 
 -- beta reduction (a wrapper of reduceLabeled: labels an expression before reducing it)
 reduce :: Expr -> Expr
-reduce e = reduceLabeled (label e Map.empty)
+reduce e = reduceLabeled (label e Map.empty Map.empty)
 
 -- beta reduction of a labeled expression
 reduceLabeled :: Expr -> Expr
@@ -94,17 +94,18 @@ findAndReplace (Eabs v1 e1) e2 var = Eabs v1 (findAndReplace e1 e2 var)
 findAndReplace (Eapp e11 e12) e2 var = Eapp (findAndReplace e11 e2 var) (findAndReplace e12 e2 var)
 
 -- assigns a label to each variable in an Expr
-label :: Expr -> Map.Map Var Int -> Expr
-label (Evar var@(Var v num)) m = Evar (Var v val)
+label :: Expr -> Map.Map Var Int -> Map.Map String Int -> Expr
+label (Evar var@(Var v num)) mv ms = Evar (Var v val)
   where
-    l = Map.lookup var m
+    l = Map.lookup var mv
     val = extrMaybeInt l
-label (Eabs var@(Var v num) e) m = Eabs (Var v val) (label e newm)
+label (Eabs var@(Var v num) e) mv ms = Eabs (Var v val) (label e newmv newms)
   where
-    newm = (Map.insertWith (+) var 1 m)
-    l = Map.lookup var newm
+    newms = (Map.insertWith (+) v 1 ms)
+    l = Map.lookup v newms
     val = extrMaybeInt l
-label (Eapp e1 e2) m = Eapp (label e1 m) (label e2 m)
+    newmv = (Map.insert var val mv)
+label (Eapp e1 e2) mv ms = Eapp (label e1 mv ms) (label e2 mv ms)
 
 -- extracts a value from a Maybe object
 extrMaybeInt :: Maybe Int -> Int
