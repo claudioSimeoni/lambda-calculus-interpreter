@@ -6,6 +6,7 @@ module Expr (
     reduce,
     reductionChain,
     fullReduce,
+    alphaEquivalence,
 ) where
 
 import qualified Data.Map as Map
@@ -22,6 +23,9 @@ instance Show Var where
 data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
 instance Show Expr where
     show e = showExpr (label e Map.empty)
+
+instance Eq Expr where
+    (==) = alphaEquivalence
 
 --------------------------------------------------------------------------------------
 -- showExpr and readExpr
@@ -126,3 +130,33 @@ fullReduce :: Expr -> Expr
 fullReduce e
     | isReducible e = fullReduce $ reduce e
     | otherwise = e
+
+--------------------------------------------------------------------------------------
+-- alpha equivalence
+--------------------------------------------------------------------------------------
+
+alphaEquivalence :: Expr -> Expr -> Bool
+alphaEquivalence e1 e2 = aEq (label e1 Map.empty) (label e2 Map.empty) Map.empty Map.empty
+
+aEq :: Expr -> Expr -> Map.Map Var Var -> Map.Map Var Var -> Bool
+aEq (Evar v1) (Evar v2) map1 map2 = varEq
+    where updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
+          updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
+          v1T = Map.lookup v1 updMap1
+          v2T = Map.lookup v2 updMap2
+          varEq = v1T == Just v2 && v2T == Just v1
+
+aEq (Eabs v1 e1) (Eabs v2 e2) map1 map2
+    | varEq     = aEq e1 e2 updMap1 updMap2
+    | otherwise = False 
+    where updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
+          updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
+          v1T = Map.lookup v1 updMap1
+          v2T = Map.lookup v2 updMap2
+          varEq = v1T == Just v2 && v2T == Just v1
+
+aEq (Eapp e11 e12) (Eapp e21 e22) map1 map2 = eqLeft && eqRight
+    where eqLeft  = aEq e11 e21 map1 map2
+          eqRight = aEq e12 e22 map1 map2
+
+aEq _ _ map1 map2 = False
