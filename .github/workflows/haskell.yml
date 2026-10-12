@@ -33,7 +33,7 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-        - name: Install dependencies and Fourmolu
+    - name: Install dependencies and Fourmolu
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
