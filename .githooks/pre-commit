@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mapfile -d '' files < <(git diff --cached --name-only --diff-filter=ACM -z -- '*.hs')
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+echo "Running Fourmolu..."
+fourmolu --mode inplace "${files[@]}"
+
+# Re-stage files after Fourmolu modifies them.
+git add -- "${files[@]}"
+
+echo "Fourmolu formatting complete."
