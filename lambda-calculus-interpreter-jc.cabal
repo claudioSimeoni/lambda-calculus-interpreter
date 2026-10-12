@@ -68,12 +68,11 @@ test-suite tests
     type: exitcode-stdio-1.0
     main-is: Spec.hs
     hs-source-dirs: test
-    other-modules:
-        ShowReadSpec
+    ghc-options: -Wno-missing-home-modules
     build-depends:
         base ^>=4.18.3.0,
         lambda-calculus-interpreter-jc,
         hspec
-    default-language: Haskell2010
     build-tool-depends: 
         hspec-discover:hspec-discover
+    default-language: Haskell2010
