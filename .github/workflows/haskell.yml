@@ -33,14 +33,16 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Install dependencies
+        - name: Install dependencies and Fourmolu
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
+        cabal install fourmolu --install-method=copy --overwrite-policy=always
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
     - name: Check Fourmolu Formatting
       run: |
-        cabal run fourmolu -- --mode check $(find . -name "*.hs" -not -path "*/dist-newstyle/*")
+        fourmolu --mode check $(find . -name "*.hs" -not -path "*/dist-newstyle/*")
 
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
