@@ -10,6 +10,7 @@ module Expr (
 ) where
 
 import qualified Data.Map as Map
+import Data.Maybe (isNothing)
 
 data Var = Var String Int deriving (Eq, Ord)
 instance Show Var where
@@ -140,15 +141,15 @@ alphaEquivalence e1 e2 = aEq (label e1 Map.empty) (label e2 Map.empty) Map.empty
 
 aEq :: Expr -> Expr -> Map.Map Var Var -> Map.Map Var Var -> Bool
 aEq (Evar v1) (Evar v2) map1 map2 = varEq
-    where updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
-          updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
-          v1T = Map.lookup v1 updMap1
-          v2T = Map.lookup v2 updMap2
-          varEq = v1T == Just v2 && v2T == Just v1
+    where v1T = Map.lookup v1 map1
+          v2T = Map.lookup v2 map2
+          varEq = if isNothing v1T && isNothing v1T
+                    then v1 == v2
+                    else v1T == Just v2 && v2T == Just v1
 
 aEq (Eabs v1 e1) (Eabs v2 e2) map1 map2
     | varEq     = aEq e1 e2 updMap1 updMap2
-    | otherwise = False 
+    | otherwise = False
     where updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
           updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
           v1T = Map.lookup v1 updMap1
