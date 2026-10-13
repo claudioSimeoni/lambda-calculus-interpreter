@@ -1,12 +1,12 @@
 module Logic (
-    true,
-    false,
-    exprNot,
-    exprAnd,
-    exprOr,
-    exprXor,
-    exprNand,
-    exprNor,
+  true,
+  false,
+  exprNot,
+  exprAnd,
+  exprOr,
+  exprXor,
+  exprNand,
+  exprNor,
 ) where
 
 import Expr
