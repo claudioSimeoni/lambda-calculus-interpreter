@@ -16,11 +16,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 1. Check formatting first using the official action (runs in ~5s)
+    # 1. Check formatting using the official fourmolu action
     - name: Check Fourmolu Formatting
       uses: fourmolu/fourmolu-action@v10
       with:
-        version: "0.14.1.0" # Set to your desired Fourmolu version
+        version: "0.14.1.0"
 
     # 2. Setup Haskell tools
     - uses: haskell-actions/setup@v2
