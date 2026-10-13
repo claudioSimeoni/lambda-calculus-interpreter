@@ -8,7 +8,7 @@ module Expr (
     fullReduce,
 ) where
 
-import qualified Data.Map as Map
+import Data.Map qualified as Map
 
 data Var = Var String Int deriving (Eq, Ord)
 instance Show Var where

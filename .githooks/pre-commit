@@ -57,8 +57,7 @@ for file in "${files[@]}"; do
   temp_dirs+=("$temp_dir")
   temp_file="$temp_dir/${file##*/}"
 
-  git show ":$file" > "$temp_file"
-  fourmolu --mode inplace "$temp_file"
+  git show ":$file" | fourmolu --mode stdout --stdin-input-file "$file" > "$temp_file"
   formatted_blob=$(git hash-object -w "$temp_file")
 
   if [[ "$formatted_blob" == "$staged_blob" ]]; then
