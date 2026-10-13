@@ -60,9 +60,9 @@ library
     hs-source-dirs: src
     exposed-modules: Expr
     build-depends:
-        base >=4.18.3.0 && <4.20,
+        base ^>= 4.22,
         containers
-    default-language: Haskell2010
+    default-language: GHC2024
 
 test-suite tests
     type: exitcode-stdio-1.0
@@ -71,9 +71,9 @@ test-suite tests
     other-modules:
         ShowReadSpec
     build-depends:
-        base >=4.18.3.0 && <4.20,
+        base ^>= 4.22,
         lambda-calculus-interpreter-jc,
         hspec
-    default-language: Haskell2010
+    default-language: GHC2024
     build-tool-depends: 
         hspec-discover:hspec-discover
