@@ -16,11 +16,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # 1. Check formatting first using the official action (runs in ~5s)
+    - name: Check Fourmolu Formatting
+      uses: fourmolu/fourmolu-action@v10
+      with:
+        version: "0.14.1.0" # Set to your desired Fourmolu version
+
+    # 2. Setup Haskell tools
     - uses: haskell-actions/setup@v2
       with:
         ghc-version: '9.8.2'
         cabal-version: '3.10.3.0'
 
+    # 3. Cache dependencies
     - name: Cache
       uses: actions/cache@v4
       env:
@@ -33,16 +41,11 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Install dependencies and Fourmolu
+    # 4. Build dependencies & project
+    - name: Install dependencies
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
-        cabal install fourmolu --install-method=copy --overwrite-policy=always
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-    - name: Check Fourmolu Formatting
-      run: |
-        fourmolu --mode check $(find . -name "*.hs" -not -path "*/dist-newstyle/*")
 
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
