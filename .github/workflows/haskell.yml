@@ -31,6 +31,9 @@ jobs:
       uses: haskell-actions/run-fourmolu@v12
       with:
         version: ${{ steps.fourmolu-version.outputs.version }}
+        extra-args: >-
+          --config ${{ github.workspace }}/fourmolu.yaml
+          --debug
 
     # 2. Setup Haskell tools
     - name: Setup Haskell
