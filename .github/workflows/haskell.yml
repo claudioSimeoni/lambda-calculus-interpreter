@@ -28,12 +28,9 @@ jobs:
 
     # 1. Check formatting with the maintained Fourmolu action
     - name: Check Fourmolu Formatting
-      uses: haskell-actions/run-fourmolu@v12
+      uses: haskell-actions/run-fourmolu@v13
       with:
         version: ${{ steps.fourmolu-version.outputs.version }}
-        extra-args: >-
-          --config ${{ github.workspace }}/fourmolu.yaml
-          --debug
 
     # 2. Setup Haskell tools
     - name: Setup Haskell
