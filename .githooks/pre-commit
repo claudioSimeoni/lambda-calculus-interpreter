@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+files=()
+while IFS= read -r -d '' file; do
+  files+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.hs')
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+expected_version="$(< .fourmolu-version)"
+if [[ ! "$expected_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Invalid Fourmolu version in .fourmolu-version." >&2
+  exit 1
+fi
+
+if ! command -v fourmolu >/dev/null 2>&1; then
+  echo "Fourmolu $expected_version is required. Install it with: cabal install fourmolu-$expected_version" >&2
+  exit 1
+fi
+
+installed_version=$(fourmolu --version | awk 'NR == 1 { print $2 }')
+if [[ "$installed_version" != "$expected_version" ]]; then
+  echo "Fourmolu $expected_version is required, but found ${installed_version:-unknown}." >&2
+  echo "Install the matching version with: cabal install fourmolu-$expected_version" >&2
+  exit 1
+fi
+
+temp_dirs=()
+cleanup() {
+  for temp_dir in "${temp_dirs[@]}"; do
+    rm -rf "$temp_dir"
+  done
+}
+trap cleanup EXIT
+
+echo "Running Fourmolu..."
+for file in "${files[@]}"; do
+  index_entry=$(git ls-files --stage -- "$file")
+  mode=${index_entry%% *}
+  remaining=${index_entry#* }
+  staged_blob=${remaining%% *}
+
+  if [[ "$mode" != "100644" && "$mode" != "100755" ]]; then
+    echo "Skipping non-regular Haskell file: $file" >&2
+    continue
+  fi
+
+  file_dir=${file%/*}
+  if [[ "$file_dir" == "$file" ]]; then
+    file_dir=.
+  fi
+
+  temp_dir=$(mktemp -d "${file_dir}/.fourmolu.XXXXXX")
+  temp_dirs+=("$temp_dir")
+  temp_file="$temp_dir/${file##*/}"
+
+  git show ":$file" | fourmolu --mode stdout --stdin-input-file "$file" > "$temp_file"
+  formatted_blob=$(git hash-object -w "$temp_file")
+
+  if [[ "$formatted_blob" == "$staged_blob" ]]; then
+    continue
+  fi
+
+  if [[ -f "$file" ]]; then
+    worktree_blob=$(git hash-object --path="$file" "$file")
+  else
+    worktree_blob=
+  fi
+
+  git update-index --cacheinfo "$mode" "$formatted_blob" "$file"
+
+  if [[ "$worktree_blob" == "$staged_blob" ]]; then
+    cp "$temp_file" "./$file"
+    git add -- "$file"
+  else
+    echo "Formatted the staged version of $file; left unstaged working-tree edits untouched." >&2
+  fi
+done
+
+echo "Fourmolu formatting complete."

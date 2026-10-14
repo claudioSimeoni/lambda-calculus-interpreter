@@ -11,36 +11,53 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
-    - uses: haskell-actions/setup@v2
+    - name: Read Fourmolu version
+      id: fourmolu-version
+      run: |
+        version="$(cat .fourmolu-version)"
+        if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid Fourmolu version in .fourmolu-version: $version" >&2
+          exit 1
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    # 1. Check formatting with the maintained Fourmolu action
+    - name: Check Fourmolu Formatting
+      uses: haskell-actions/run-fourmolu@v13
       with:
-        ghc-version: '9.8.2'
-        cabal-version: '3.10.3.0'
+        version: ${{ steps.fourmolu-version.outputs.version }}
 
+    # 2. Setup Haskell tools
+    - name: Setup Haskell
+      id: setup-haskell
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.14.1'
+        cabal-version: '3.18.1.0'
+        cabal-update: false
+
+    # 3. Cache dependencies
     - name: Cache
-      uses: actions/cache@v4
-      env:
-        cache-name: cache-cabal
+      uses: actions/cache@v6
       with:
-        path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        path: |
+          ${{ steps.setup-haskell.outputs.cabal-store }}
+          ~/.cabal/packages
+          dist-newstyle
+        key: ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-cabal-${{ steps.setup-haskell.outputs.cabal-version }}-${{ hashFiles('**/*.cabal', '**/cabal.project*') }}
         restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+          ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-cabal-${{ steps.setup-haskell.outputs.cabal-version }}-
 
+    # 4. Build dependencies & project
     - name: Install dependencies
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
-
-    - name: Check Fourmolu Formatting
-      run: |
-        cabal run fourmolu -- --mode check $(find . -name "*.hs" -not -path "*/dist-newstyle/*")
 
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
