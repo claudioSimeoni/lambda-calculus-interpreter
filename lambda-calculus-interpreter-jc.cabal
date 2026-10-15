@@ -56,46 +56,23 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable lambda-calculus-interpreter
-    -- Import common warning flags.
-    import:           warnings
-
-    -- .hs or .lhs file containing the Main module.
-    main-is:          Main.hs
-
-    -- Modules included in this executable, other than Main.
-    -- other-modules:
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-
-    -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0
-
-    -- Directories containing source files.
-    hs-source-dirs:   app
-
-    -- Base language which the package is written in.
-    default-language: Haskell2010
-
 library
     hs-source-dirs: src
     exposed-modules: Expr
     build-depends:
-        base ^>=4.18.3.0,
+        base ^>= 4.22,
         containers
-    default-language: Haskell2010
+    default-language: GHC2024
 
 test-suite tests
     type: exitcode-stdio-1.0
     main-is: Spec.hs
     hs-source-dirs: test
-    other-modules:
-        ShowReadSpec
+    ghc-options: -Wno-missing-home-modules
     build-depends:
-        base ^>=4.18.3.0,
+        base ^>= 4.22,
         lambda-calculus-interpreter-jc,
         hspec
-    default-language: Haskell2010
     build-tool-depends: 
         hspec-discover:hspec-discover
+    default-language: GHC2024
