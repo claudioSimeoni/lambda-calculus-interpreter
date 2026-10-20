@@ -23,7 +23,7 @@ instance Show Var where
 
 data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
 instance Show Expr where
-  show e = showExpr (label e Map.empty)
+  show e = showExpr (label e Map.empty Map.empty)
 
 instance Eq Expr where
   (==) = alphaEquivalence
@@ -101,15 +101,15 @@ findAndReplace (Eapp e11 e12) e2 var = Eapp (findAndReplace e11 e2 var) (findAnd
 -- assigns a label to each variable in an Expr
 label :: Expr -> Map.Map Var Int -> Map.Map String Int -> Expr
 label (Evar var@(Var v num)) mv ms = Evar (Var v val)
-  where
-    l = Map.lookup var mv
-    val = extrMaybeInt l
+ where
+  l = Map.lookup var mv
+  val = extrMaybeInt l
 label (Eabs var@(Var v num) e) mv ms = Eabs (Var v val) (label e newmv newms)
-  where
-    newms = (Map.insertWith (+) v 1 ms)
-    l = Map.lookup v newms
-    val = extrMaybeInt l
-    newmv = (Map.insert var val mv)
+ where
+  newms = (Map.insertWith (+) v 1 ms)
+  l = Map.lookup v newms
+  val = extrMaybeInt l
+  newmv = (Map.insert var val mv)
 label (Eapp e1 e2) mv ms = Eapp (label e1 mv ms) (label e2 mv ms)
 
 -- extracts a value from a Maybe object
@@ -138,7 +138,7 @@ fullReduce e
 --------------------------------------------------------------------------------------
 
 alphaEquivalence :: Expr -> Expr -> Bool
-alphaEquivalence e1 e2 = aEq (label e1 Map.empty) (label e2 Map.empty) Map.empty Map.empty
+alphaEquivalence e1 e2 = aEq (label e1 Map.empty Map.empty) (label e2 Map.empty Map.empty) Map.empty Map.empty
 
 aEq :: Expr -> Expr -> Map.Map Var Var -> Map.Map Var Var -> Bool
 aEq (Evar v1) (Evar v2) map1 map2 = varEq
