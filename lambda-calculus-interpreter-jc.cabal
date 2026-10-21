@@ -58,7 +58,9 @@ common warnings
 
 library
     hs-source-dirs: src
-    exposed-modules: Expr
+    exposed-modules: 
+        Expr,
+        Var
     build-depends:
         base ^>= 4.22,
         containers
