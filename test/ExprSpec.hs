@@ -2,7 +2,6 @@ module ExprSpec (spec) where
 
 import Data.Bool (Bool (False))
 import Expr
-import Expr (alphaEquivalence, readExpr)
 import Test.Hspec
 
 x = Var "x" 0
@@ -33,6 +32,7 @@ spec = do
       alphaEquivalence (readExpr "\\a.\\b.(a b)") (readExpr "\\b.\\a.(a b)") `shouldBe` False
     it "test 2" $ do
       alphaEquivalence (readExpr "a a") (readExpr "a b") `shouldBe` False
+      alphaEquivalence (readExpr "a a") (readExpr "b b") `shouldBe` False
       alphaEquivalence (readExpr "\\a.b") (readExpr "\\b.b") `shouldBe` False
       alphaEquivalence (readExpr "\\a.b") (readExpr "\\a.c") `shouldBe` False
       alphaEquivalence (readExpr "\\a.b") (readExpr "\\c.b") `shouldBe` True

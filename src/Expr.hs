@@ -1,25 +1,18 @@
 module Expr (
   Expr (..),
-  Var (..),
   showExpr,
   readExpr,
   reduce,
   reductionChain,
   fullReduce,
   alphaEquivalence,
+  Var (..),
+  readVar,
 ) where
 
 import Data.Map qualified as Map
 import Data.Maybe (isNothing)
-
-data Var = Var String Int deriving (Eq, Ord)
-instance Show Var where
-  show (Var var num) = var ++ id
-   where
-    id =
-      if num == 1
-        then ""
-        else show num
+import Var
 
 data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
 instance Show Expr where
@@ -45,8 +38,8 @@ readExpr e
   | head eh == '(' = readExpr $ tail $ init eh
   | head eh == '\\' =
       let (var, rest) = span (/= '.') eh
-       in Eabs (Var (tail var) 1) (readExpr (tail rest))
-  | otherwise = Evar (Var eh 1)
+       in Eabs (readVar (tail var)) (readExpr (tail rest))
+  | otherwise = Evar (readVar eh)
  where
   es@(eh : _) = splitApplication e
 
