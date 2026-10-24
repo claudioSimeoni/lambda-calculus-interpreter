@@ -15,8 +15,8 @@ data Expr = Evar Var | Eabs String Expr | Eapp Expr Expr
 instance Show Expr where
   show = showExpr
 
-instance Eq Expr where
-  (==) = alphaEquivalence
+-- instance Eq Expr where
+--   (==) = alphaEquivalence
 
 data Var = Bound Int | Free String deriving (Eq, Ord)
 
@@ -105,9 +105,9 @@ splitApplication x = first : splitApplication rest
   len = length $ takeWhile (/= (0, ' ')) (scanl prefPar (0, '#') x)
   (first, rest) = splitAt (len - 1) x
 
---------------------------------------------------------------------------------------
--- reduce (beta reduction)
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- reduce (beta reduction)
+-- --------------------------------------------------------------------------------------
 
 -- | beta reduction (performs the first reduction in dfs order)
 reduce :: Expr -> Expr
@@ -146,9 +146,9 @@ addDisp (Evar var) disp depth = Evar var
 addDisp (Eabs var expr) disp depth = Eabs var (addDisp expr disp (depth + 1))
 addDisp (Eapp e1 e2) disp depth = Eapp (addDisp e1 disp depth) (addDisp e2 disp depth)
 
---------------------------------------------------------------------------------------
--- complete reduction
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- complete reduction
+-- --------------------------------------------------------------------------------------
 
 -- | returns a list with all beta reductions
 reductionChain :: Expr -> [Expr]
@@ -162,9 +162,9 @@ fullReduce e
   | isReducible e = fullReduce $ reduce e
   | otherwise = e
 
---------------------------------------------------------------------------------------
--- alpha equivalence
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- alpha equivalence
+-- --------------------------------------------------------------------------------------
 
 -- | checks if two expressions are alpha equivalent
 alphaEquivalence :: Expr -> Expr -> Bool
