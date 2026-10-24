@@ -60,7 +60,8 @@ library
     hs-source-dirs: src
     exposed-modules: 
         Expr,
-        Var
+        Logic,
+        Var,
     build-depends:
         base ^>= 4.22,
         containers
@@ -78,3 +79,7 @@ test-suite tests
     build-tool-depends: 
         hspec-discover:hspec-discover
     default-language: GHC2024
+    other-modules:
+        ExprSpec,
+        ReduceSpec,
+        VarSpec

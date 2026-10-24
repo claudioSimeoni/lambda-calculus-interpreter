@@ -1,25 +1,26 @@
 module Expr (
   Expr (..),
   showExpr,
-  readExpr,
-  reduce,
-  reductionChain,
-  fullReduce,
-  alphaEquivalence,
+  -- readExpr,
+  -- reduce,
+  -- reductionChain,
+  -- fullReduce,
+  -- alphaEquivalence,
   Var (..),
-  readVar,
+  -- readVar,
 ) where
 
 import Data.Map qualified as Map
 import Data.Maybe (isNothing)
+import Data.Set qualified as Set
 import Var
 
-data Expr = Evar Var | Eabs Var Expr | Eapp Expr Expr
+data Expr = Evar Var | Eabs String Expr | Eapp Expr Expr
 instance Show Expr where
-  show e = showExpr (label e Map.empty Map.empty)
+  show e = showExpr e
 
-instance Eq Expr where
-  (==) = alphaEquivalence
+-- instance Eq Expr where
+--   (==) = alphaEquivalence
 
 --------------------------------------------------------------------------------------
 -- showExpr and readExpr
@@ -27,21 +28,62 @@ instance Eq Expr where
 
 -- | converts Expr to String
 showExpr :: Expr -> String
-showExpr (Evar var) = show var
-showExpr (Eabs var expr) = "\\" ++ show var ++ "." ++ showExpr expr
-showExpr (Eapp e1 e2) = "(" ++ showExpr e1 ++ " " ++ showExpr e2 ++ ")"
+showExpr e = showExprFree e [l : show c | c <- [1 ..], l <- ['a' .. 'z']] [] (freeBuild e)
+
+-- | converts Expr to String
+showExprFree :: Expr -> [String] -> [String] -> Set.Set String -> String
+showExprFree (Evar (Free var)) reprList binds freeRepr = var
+showExprFree (Evar (Bound var)) reprList binds freeRepr = binds !! var
+showExprFree (Eabs var expr) reprList binds freeRepr =
+  "\\"
+    ++ newRepr
+    ++ "."
+    ++ (showExprFree expr xs (newRepr : binds) freeRepr)
+ where
+  newReprList@(newRepr : xs)
+    | not (Set.member var freeRepr) = (var : reprList)
+    | otherwise = findAvailable reprList freeRepr
+showExprFree (Eapp e1 e2) r@(nextRepr : xs) binds freeRepr =
+  "("
+    ++ (showExprFree e1 r binds freeRepr)
+    ++ " "
+    ++ (showExprFree e2 r binds freeRepr)
+    ++ ")"
+
+-- | it builds a set which contains all the Strings used for free variables
+freeBuild :: Expr -> Set.Set String
+freeBuild (Evar (Bound var)) = Set.empty
+freeBuild (Evar (Free var)) = Set.singleton var
+freeBuild (Eabs var expr) = freeBuild expr
+freeBuild (Eapp e1 e2) = Set.union (freeBuild e1) (freeBuild e2)
+
+{- | finds the next available String in reprList which is not already contained into freeRepr (assumes reprList is not empty)
+| returns the reprList from that string on
+-}
+findAvailable :: [String] -> Set.Set String -> [String]
+findAvailable reprList@(x : xs) freeRepr
+  | (Set.member x freeRepr) = findAvailable xs freeRepr
+  | otherwise = reprList
 
 -- | converts String to Expr
 readExpr :: String -> Expr
-readExpr e
-  | length es > 1 = foldl1 Eapp (map readExpr es)
-  | head eh == '(' = readExpr $ tail $ init eh
+readExpr s = readExprInner s []
+
+-- | converts String to Expr
+readExprInner :: String -> [String] -> Expr
+readExprInner e binds
+  | length es > 1 = foldl1 Eapp (map (\x -> readExprInner x binds) es)
+  | head eh == '(' = readExprInner (tail (init eh)) binds
   | head eh == '\\' =
       let (var, rest) = span (/= '.') eh
-       in Eabs (readVar (tail var)) (readExpr (tail rest))
-  | otherwise = Evar (readVar eh)
+       in Eabs (tail var) (readExprInner (tail rest) ((tail var) : binds))
+  | otherwise =
+      if len == length binds
+        then Evar (Free eh)
+        else Evar (Bound len)
  where
   es@(eh : _) = splitApplication e
+  len = length $ takeWhile (/= eh) binds
 
 -- takes a string and splits at all function application points
 splitApplication :: String -> [String]
@@ -59,22 +101,31 @@ splitApplication x = first : splitApplication rest
   len = length $ takeWhile (/= (0, ' ')) (scanl prefPar (0, '#') x)
   (first, rest) = splitAt (len - 1) x
 
---------------------------------------------------------------------------------------
--- reduce (beta reduction)
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- reduce (beta reduction)
+-- --------------------------------------------------------------------------------------
 
 -- beta reduction (a wrapper of reduceLabeled: labels an expression before reducing it)
 reduce :: Expr -> Expr
 reduce e = reduceLabeled (label e Map.empty Map.empty)
 
 -- beta reduction of a labeled expression
-reduceLabeled :: Expr -> Expr
-reduceLabeled (Evar var) = Evar var
-reduceLabeled (Eabs var expr) = Eabs var (reduceLabeled expr)
-reduceLabeled e@(Eapp (Eabs var e1) e2) = findAndReplace e1 e2 var
-reduceLabeled (Eapp e1 e2)
-  | isReducible e1 = Eapp (reduceLabeled e1) e2
-  | otherwise = Eapp e1 (reduceLabeled e2)
+reduce :: Expr -> Expr
+reduce (Evar var) = Evar var
+reduce (Eabs var expr) = Eabs var (reduce expr)
+reduce e@(Eapp (Eabs var e1) e2) = findAndReplace e1 e2 var
+reduce (Eapp e1 e2)
+  | isReducible e1 = Eapp (reduce e1) e2
+  | otherwise = Eapp e1 (reduce e2)
+
+-- beta reduction utility
+reduce :: Expr -> Int -> Expr
+reduce (Evar var) = Evar var
+reduce (Eabs var expr) = Eabs var (reduce expr)
+reduce e@(Eapp (Eabs var e1) e2) = findAndReplace e1 e2 var
+reduce (Eapp e1 e2)
+  | isReducible e1 = Eapp (reduce e1) e2
+  | otherwise = Eapp e1 (reduce e2)
 
 -- autoexplicative
 isReducible :: Expr -> Bool
@@ -110,49 +161,49 @@ extrMaybeInt :: Maybe Int -> Int
 extrMaybeInt Nothing = 0
 extrMaybeInt (Just val) = val
 
---------------------------------------------------------------------------------------
--- complete reduction
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- complete reduction
+-- --------------------------------------------------------------------------------------
 
--- returns a list with all beta reductions
-reductionChain :: Expr -> [Expr]
-reductionChain e
-  | isReducible e = e : reductionChain (reduce e)
-  | otherwise = [e]
+-- -- returns a list with all beta reductions
+-- reductionChain :: Expr -> [Expr]
+-- reductionChain e
+--   | isReducible e = e : reductionChain (reduce e)
+--   | otherwise = [e]
 
--- returns fully reduced expr
-fullReduce :: Expr -> Expr
-fullReduce e
-  | isReducible e = fullReduce $ reduce e
-  | otherwise = e
+-- -- returns fully reduced expr
+-- fullReduce :: Expr -> Expr
+-- fullReduce e
+--   | isReducible e = fullReduce $ reduce e
+--   | otherwise = e
 
---------------------------------------------------------------------------------------
--- alpha equivalence
---------------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------------
+-- -- alpha equivalence
+-- --------------------------------------------------------------------------------------
 
-alphaEquivalence :: Expr -> Expr -> Bool
-alphaEquivalence e1 e2 = aEq (label e1 Map.empty Map.empty) (label e2 Map.empty Map.empty) Map.empty Map.empty
+-- alphaEquivalence :: Expr -> Expr -> Bool
+-- alphaEquivalence e1 e2 = aEq (label e1 Map.empty Map.empty) (label e2 Map.empty Map.empty) Map.empty Map.empty
 
-aEq :: Expr -> Expr -> Map.Map Var Var -> Map.Map Var Var -> Bool
-aEq (Evar v1) (Evar v2) map1 map2 = varEq
- where
-  v1T = Map.lookup v1 map1
-  v2T = Map.lookup v2 map2
-  varEq =
-    if isNothing v1T && isNothing v1T
-      then v1 == v2
-      else v1T == Just v2 && v2T == Just v1
-aEq (Eabs v1 e1) (Eabs v2 e2) map1 map2
-  | varEq = aEq e1 e2 updMap1 updMap2
-  | otherwise = False
- where
-  updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
-  updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
-  v1T = Map.lookup v1 updMap1
-  v2T = Map.lookup v2 updMap2
-  varEq = v1T == Just v2 && v2T == Just v1
-aEq (Eapp e11 e12) (Eapp e21 e22) map1 map2 = eqLeft && eqRight
- where
-  eqLeft = aEq e11 e21 map1 map2
-  eqRight = aEq e12 e22 map1 map2
-aEq _ _ map1 map2 = False
+-- aEq :: Expr -> Expr -> Map.Map Var Var -> Map.Map Var Var -> Bool
+-- aEq (Evar v1) (Evar v2) map1 map2 = varEq
+--  where
+--   v1T = Map.lookup v1 map1
+--   v2T = Map.lookup v2 map2
+--   varEq =
+--     if isNothing v1T && isNothing v1T
+--       then v1 == v2
+--       else v1T == Just v2 && v2T == Just v1
+-- aEq (Eabs v1 e1) (Eabs v2 e2) map1 map2
+--   | varEq = aEq e1 e2 updMap1 updMap2
+--   | otherwise = False
+--  where
+--   updMap1 = Map.insertWith (\a b -> b) v1 v2 map1
+--   updMap2 = Map.insertWith (\a b -> b) v2 v1 map2
+--   v1T = Map.lookup v1 updMap1
+--   v2T = Map.lookup v2 updMap2
+--   varEq = v1T == Just v2 && v2T == Just v1
+-- aEq (Eapp e11 e12) (Eapp e21 e22) map1 map2 = eqLeft && eqRight
+--  where
+--   eqLeft = aEq e11 e21 map1 map2
+--   eqRight = aEq e12 e22 map1 map2
+-- aEq _ _ map1 map2 = False
