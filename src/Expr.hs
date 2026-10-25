@@ -25,29 +25,29 @@ data Var = Bound Int | Free String deriving (Eq, Ord)
 
 -- | converts Expr to String
 showExpr :: Expr -> String
-showExpr e = showExprFree e [l : show c | c <- [1 ..], l <- ['a' .. 'z']] [] (freeBuild e)
+showExpr e = showExprInner e [l : show c | c <- [1 ..], l <- ['a' .. 'z']] [] (freeBuild e)
 
--- | converts Expr to String
-showExprFree :: Expr -> [String] -> [String] -> Set.Set String -> String
-showExprFree (Evar (Free var)) reprList binds freeRepr = var
-showExprFree (Evar (Bound var)) reprList binds freeRepr = binds !! var -- ++ show var (for debugging)
-showExprFree (Eabs var expr) reprList binds freeRepr =
+-- | showExpr wraps this function
+showExprInner :: Expr -> [String] -> [String] -> Set.Set String -> String
+showExprInner (Evar (Free var)) reprList binds freeRepr = var
+showExprInner (Evar (Bound var)) reprList binds freeRepr = binds !! var -- ++ show var -- (for debugging)
+showExprInner (Eabs var expr) reprList binds freeRepr =
   "\\"
     ++ newRepr
     ++ "."
-    ++ (showExprFree expr xs (newRepr : binds) freeRepr)
+    ++ (showExprInner expr xs (newRepr : binds) freeRepr)
  where
   newReprList@(newRepr : xs)
     | not (Set.member var freeRepr) = (var : reprList)
     | otherwise = findAvailable reprList freeRepr
-showExprFree (Eapp e1 e2) r@(nextRepr : xs) binds freeRepr =
+showExprInner (Eapp e1 e2) r@(nextRepr : xs) binds freeRepr =
   "("
-    ++ (showExprFree e1 r binds freeRepr)
+    ++ (showExprInner e1 r binds freeRepr)
     ++ " "
-    ++ (showExprFree e2 r binds freeRepr)
+    ++ (showExprInner e2 r binds freeRepr)
     ++ ")"
 
--- | it builds a set which contains all the Strings used for free variables
+-- | it builds a set which contains all the Strings already used for free variables
 freeBuild :: Expr -> Set.Set String
 freeBuild (Evar (Bound var)) = Set.empty
 freeBuild (Evar (Free var)) = Set.singleton var
@@ -66,7 +66,7 @@ findAvailable reprList@(x : xs) freeRepr
 readExpr :: String -> Expr
 readExpr s = readExprInner s []
 
--- | converts String to Expr
+-- | readExpr wraps this function
 readExprInner :: String -> [String] -> Expr
 readExprInner e binds
   | length es > 1 = foldl1 Eapp (map (\x -> readExprInner x binds) es)
@@ -82,7 +82,7 @@ readExprInner e binds
   es@(eh : _) = splitApplication e
   len = length $ takeWhile (/= eh) binds
 
--- takes a string and splits at all function application points
+-- | takes a string and splits at all function application points
 splitApplication :: String -> [String]
 splitApplication [] = []
 splitApplication (' ' : xs) = splitApplication xs
@@ -98,11 +98,11 @@ splitApplication x = first : splitApplication rest
   len = length $ takeWhile (/= (0, ' ')) (scanl prefPar (0, '#') x)
   (first, rest) = splitAt (len - 1) x
 
--- --------------------------------------------------------------------------------------
--- -- reduce (beta reduction)
--- --------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+-- reduce (beta reduction)
+--------------------------------------------------------------------------------------
 
--- beta reduction
+-- | beta reduction (performs the first reduction in dfs order)
 reduce :: Expr -> Expr
 reduce (Evar var) = Evar var
 reduce (Eabs var expr) = Eabs var (reduce expr)
@@ -111,14 +111,14 @@ reduce (Eapp e1 e2)
   | isReducible e1 = Eapp (reduce e1) e2
   | otherwise = Eapp e1 (reduce e2)
 
--- autoexplicative
+-- | checks if the expression is reducible
 isReducible :: Expr -> Bool
 isReducible (Evar var) = False
 isReducible (Eabs var expr) = isReducible expr
 isReducible (Eapp (Eabs var e1) e2) = True
 isReducible (Eapp e1 e2) = isReducible e1 || isReducible e2
 
--- finds occurences of var in e1 and substitutes with e2
+-- | finds occurences of var in e1 and substitutes with e2
 findAndReplace :: Expr -> Expr -> Int -> Expr
 findAndReplace (Evar (Bound v)) e2 depth
   | v == depth = addDisp e2 depth 0
@@ -127,7 +127,7 @@ findAndReplace (Evar (Bound v)) e2 depth
 findAndReplace (Eabs v1 e1) e2 depth = Eabs v1 (findAndReplace e1 e2 (depth + 1))
 findAndReplace (Eapp e11 e12) e2 depth = Eapp (findAndReplace e11 e2 depth) (findAndReplace e12 e2 depth)
 
--- adds d to all the bind variables of e
+-- | adds d to all the bound variables of e which are bound to lambdas outside the expression considered
 addDisp :: Expr -> Int -> Int -> Expr
 addDisp (Evar (Bound var)) disp depth = Evar (Bound (var + toAdd))
  where
@@ -138,28 +138,30 @@ addDisp (Evar var) disp depth = Evar var
 addDisp (Eabs var expr) disp depth = Eabs var (addDisp expr disp (depth + 1))
 addDisp (Eapp e1 e2) disp depth = Eapp (addDisp e1 disp depth) (addDisp e2 disp depth)
 
--- --------------------------------------------------------------------------------------
--- -- complete reduction
--- --------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+-- complete reduction
+--------------------------------------------------------------------------------------
 
--- returns a list with all beta reductions
+-- | returns a list with all beta reductions
 reductionChain :: Expr -> [Expr]
 reductionChain e
   | isReducible e = e : reductionChain (reduce e)
   | otherwise = [e]
 
--- returns fully reduced expr
+-- | returns fully reduced expr
 fullReduce :: Expr -> Expr
 fullReduce e
   | isReducible e = fullReduce $ reduce e
   | otherwise = e
 
--- --------------------------------------------------------------------------------------
--- -- alpha equivalence
--- --------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------
+-- alpha equivalence
+--------------------------------------------------------------------------------------
 
+-- | checks if two expressions are alpha equivalent
 alphaEquivalence :: Expr -> Expr -> Bool
 alphaEquivalence (Evar (Bound v1)) (Evar (Bound v2)) = v1 == v2
 alphaEquivalence (Evar (Free v1)) (Evar (Free v2)) = v1 == v2
 alphaEquivalence (Eabs _ e1) (Eabs _ e2) = alphaEquivalence e1 e2
 alphaEquivalence (Eapp e1 e2) (Eapp f1 f2) = (alphaEquivalence e1 f1) && (alphaEquivalence e2 f2)
+alphaEquivalence e1 e2 = False

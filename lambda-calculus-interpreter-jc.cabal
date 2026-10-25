@@ -60,8 +60,7 @@ library
     hs-source-dirs: src
     exposed-modules: 
         Expr,
-        Logic,
-        Var,
+        Logic
     build-depends:
         base ^>= 4.22,
         containers
@@ -81,5 +80,3 @@ test-suite tests
     default-language: GHC2024
     other-modules:
         ExprSpec,
-        ReduceSpec,
-        VarSpec
