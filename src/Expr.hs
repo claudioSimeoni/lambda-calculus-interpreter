@@ -15,8 +15,10 @@ data Expr = Evar Var | Eabs String Expr | Eapp Expr Expr
 instance Show Expr where
   show = showExpr
 
--- instance Eq Expr where
---   (==) = alphaEquivalence
+instance Eq Expr where
+  (==) = alphaEquivalence
+
+data Var = Bound Int | Free String deriving (Eq, Ord)
 
 data Var = Bound Int | Free String deriving (Eq, Ord)
 
