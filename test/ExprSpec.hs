@@ -48,6 +48,11 @@ spec = do
       showExpr (readExpr "\\x.x") `shouldBe` "\\x.x"
 >>>>>>> 47e484c (feat: move to De Bruijn indices internal representation)
 
+  -- you should add more thorough tests here
+  describe "reduce" $ do
+    it "test 1" $ do
+      reduce (readExpr "\\x.(x y0) x0") `shouldBe` Eapp (Evar (Free "x0")) (Evar (Free "y0"))
+
   describe "alphaEquivalence" $ do
     it "test 1" $ do
       alphaEquivalence (readExpr "\\a.\\b.a b") (readExpr "\\b.\\a.(b a)") `shouldBe` True

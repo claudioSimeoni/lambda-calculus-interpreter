@@ -20,8 +20,6 @@ instance Eq Expr where
 
 data Var = Bound Int | Free String deriving (Eq, Ord)
 
-data Var = Bound Int | Free String deriving (Eq, Ord)
-
 --------------------------------------------------------------------------------------
 -- showExpr and readExpr
 --------------------------------------------------------------------------------------

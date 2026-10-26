@@ -7,6 +7,7 @@ exprProd = readExpr $ "\\a.\\b.(a ((" ++ show sumo ++ ") b) (" ++ show zero ++ "
 exprYComb = readExpr "(\\f.(\\x.(f (x x)) \\x.(f (x x)))"
 exprIsZero = readExpr "\\n.n"
 
+producto = readExpr $ "\\a.\\b.(a ((" ++ show sumo ++ ") b) (" ++ show zero ++ "))"
 number :: Int -> Expr
 number 0 = zero
 number n = fullReduce $ Eapp successor (number (n - 1))
