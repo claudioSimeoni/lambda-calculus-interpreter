@@ -1,5 +1,6 @@
 module Expr (
   Expr (..),
+  Var (..),
   showExpr,
   readExpr,
   reduce,
@@ -12,7 +13,7 @@ import Data.Set qualified as Set
 
 data Expr = Evar Var | Eabs String Expr | Eapp Expr Expr
 instance Show Expr where
-  show e = showExpr e
+  show = showExpr
 
 instance Eq Expr where
   (==) = alphaEquivalence
@@ -35,16 +36,16 @@ showExprInner (Eabs var expr) reprList binds freeRepr =
   "\\"
     ++ newRepr
     ++ "."
-    ++ (showExprInner expr xs (newRepr : binds) freeRepr)
+    ++ showExprInner expr xs (newRepr : binds) freeRepr
  where
-  newReprList@(newRepr : xs)
-    | not (Set.member var freeRepr) = (var : reprList)
+  (newRepr : xs)
+    | not (Set.member var freeRepr) = var : reprList
     | otherwise = findAvailable reprList freeRepr
-showExprInner (Eapp e1 e2) r@(nextRepr : xs) binds freeRepr =
+showExprInner (Eapp e1 e2) r binds freeRepr =
   "("
-    ++ (showExprInner e1 r binds freeRepr)
+    ++ showExprInner e1 r binds freeRepr
     ++ " "
-    ++ (showExprInner e2 r binds freeRepr)
+    ++ showExprInner e2 r binds freeRepr
     ++ ")"
 
 -- | it builds a set which contains all the Strings already used for free variables
@@ -59,7 +60,7 @@ freeBuild (Eapp e1 e2) = Set.union (freeBuild e1) (freeBuild e2)
 -}
 findAvailable :: [String] -> Set.Set String -> [String]
 findAvailable reprList@(x : xs) freeRepr
-  | (Set.member x freeRepr) = findAvailable xs freeRepr
+  | Set.member x freeRepr = findAvailable xs freeRepr
   | otherwise = reprList
 
 -- | converts String to Expr
@@ -69,11 +70,11 @@ readExpr s = readExprInner s []
 -- | readExpr wraps this function
 readExprInner :: String -> [String] -> Expr
 readExprInner e binds
-  | length es > 1 = foldl1 Eapp (map (\x -> readExprInner x binds) es)
+  | length es > 1 = foldl1 Eapp (map (`readExprInner` binds) es)
   | head eh == '(' = readExprInner (tail (init eh)) binds
   | head eh == '\\' =
       let (var, rest) = span (/= '.') eh
-       in Eabs (tail var) (readExprInner (tail rest) ((tail var) : binds))
+       in Eabs (tail var) (readExprInner (tail rest) (tail var : binds))
   | otherwise =
       if len == length binds
         then Evar (Free eh)
@@ -106,7 +107,7 @@ splitApplication x = first : splitApplication rest
 reduce :: Expr -> Expr
 reduce (Evar var) = Evar var
 reduce (Eabs var expr) = Eabs var (reduce expr)
-reduce e@(Eapp (Eabs var e1) e2) = findAndReplace e1 e2 0
+reduce (Eapp (Eabs var e1) e2) = findAndReplace e1 e2 0
 reduce (Eapp e1 e2)
   | isReducible e1 = Eapp (reduce e1) e2
   | otherwise = Eapp e1 (reduce e2)
@@ -122,12 +123,12 @@ isReducible (Eapp e1 e2) = isReducible e1 || isReducible e2
 findAndReplace :: Expr -> Expr -> Int -> Expr
 findAndReplace (Evar (Bound v)) e2 depth
   | v == depth = addDisp e2 depth 0
-  | v > depth = (Evar (Bound (v - 1)))
+  | v > depth = Evar (Bound (v - 1))
   | otherwise = Evar (Bound v)
 findAndReplace (Eabs v1 e1) e2 depth = Eabs v1 (findAndReplace e1 e2 (depth + 1))
 findAndReplace (Eapp e11 e12) e2 depth = Eapp (findAndReplace e11 e2 depth) (findAndReplace e12 e2 depth)
 
--- | adds d to all the bound variables of e which are bound to lambdas outside the expression considered
+-- | adds disp to all the bound variables of e which are bound to lambdas outside the expression considered
 addDisp :: Expr -> Int -> Int -> Expr
 addDisp (Evar (Bound var)) disp depth = Evar (Bound (var + toAdd))
  where
@@ -163,5 +164,5 @@ alphaEquivalence :: Expr -> Expr -> Bool
 alphaEquivalence (Evar (Bound v1)) (Evar (Bound v2)) = v1 == v2
 alphaEquivalence (Evar (Free v1)) (Evar (Free v2)) = v1 == v2
 alphaEquivalence (Eabs _ e1) (Eabs _ e2) = alphaEquivalence e1 e2
-alphaEquivalence (Eapp e1 e2) (Eapp f1 f2) = (alphaEquivalence e1 f1) && (alphaEquivalence e2 f2)
-alphaEquivalence e1 e2 = False
+alphaEquivalence (Eapp e1 e2) (Eapp f1 f2) = alphaEquivalence e1 f1 && alphaEquivalence e2 f2
+alphaEquivalence _ _ = False

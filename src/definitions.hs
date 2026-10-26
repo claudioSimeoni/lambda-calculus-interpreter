@@ -4,8 +4,8 @@ zero = readExpr "\\f.\\x.x"
 successor = readExpr "\\n.\\f.\\x.(f ((n f) x))"
 sumo = readExpr "\\a.\\b.\\f.\\x.((b f) ((a f) x))"
 yCombinator = readExpr "(\\f.(\\x.(f (x x)) \\x.(f (x x)))"
-producto = readExpr $ "\\a.\\b.(a ((" ++ show sumo ++ ") b) (" ++ show zero ++ "))"
 
+producto = readExpr $ "\\a.\\b.(a ((" ++ show sumo ++ ") b) (" ++ show zero ++ "))"
 number :: Int -> Expr
 number 0 = zero
 number n = fullReduce $ Eapp successor (number (n - 1))
