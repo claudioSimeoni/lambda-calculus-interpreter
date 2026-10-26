@@ -125,6 +125,7 @@ findAndReplace (Evar (Bound v)) e2 depth
   | v == depth = addDisp e2 depth 0
   | v > depth = Evar (Bound (v - 1))
   | otherwise = Evar (Bound v)
+findAndReplace (Evar (Free v)) e2 depth = Evar (Free v)
 findAndReplace (Eabs v1 e1) e2 depth = Eabs v1 (findAndReplace e1 e2 (depth + 1))
 findAndReplace (Eapp e11 e12) e2 depth = Eapp (findAndReplace e11 e2 depth) (findAndReplace e12 e2 depth)
 
