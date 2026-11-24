@@ -9,7 +9,12 @@ module Expr (
   alphaEquivalence,
 ) where
 
+import Data.Either (either)
+import Data.List
 import Data.Set qualified as Set
+
+import Text.TinyParser.Core
+import Text.TinyParser.Parsers.Lambda qualified as P
 
 data Expr = Evar Var | Eabs String Expr | Eapp Expr Expr
 instance Show Expr where
@@ -71,39 +76,20 @@ findAvailable reprList@(x : xs) freeRepr
 
 -- | converts String to Expr
 readExpr :: String -> Expr
-readExpr s = readExprInner s []
-
--- | readExpr wraps this function
-readExprInner :: String -> [String] -> Expr
-readExprInner e binds
-  | head e == '\\' =
-      let (var, rest) = span (/= '.') e
-       in Eabs (tail var) (readExprInner (tail rest) (tail var : binds))
-  | length es > 1 = foldl1 Eapp (map (`readExprInner` binds) es)
-  | head eh == '(' = readExprInner (tail (init eh)) binds
-  | otherwise =
-      if len == length binds
-        then Evar (Free eh)
-        else Evar (Bound len)
+readExpr s = captureVariables parsedExpr []
  where
-  es@(eh : _) = splitApplication e
-  len = length $ takeWhile (/= eh) binds
+  parsedExpr = case (runParser P.expr s) of
+    Left s -> P.Evar s
+    Right e -> e
 
--- | takes a string and splits at all function application points
-splitApplication :: String -> [String]
-splitApplication [] = []
-splitApplication (' ' : xs) = splitApplication xs
-splitApplication x = first : splitApplication rest
- where
-  prefPar (acc, _) c =
-    ( acc + case c of
-        '(' -> 1
-        ')' -> -1
-        c -> 0
-    , c
-    )
-  len = length $ takeWhile (/= (0, ' ')) (scanl prefPar (0, '#') x)
-  (first, rest) = splitAt (len - 1) x
+  captureVariables :: P.Expr -> [String] -> Expr
+  captureVariables (P.Eabs v e) binds = Eabs v (captureVariables e (v : binds))
+  captureVariables (P.Eapp e1 e2) binds = Eapp (captureVariables e1 binds) (captureVariables e2 binds)
+  captureVariables (P.Evar v) binds = Evar newVar
+   where
+    newVar = case (elemIndex v binds) of
+      Just index -> Bound index
+      Nothing -> Free v
 
 --------------------------------------------------------------------------------------
 -- reduce (beta reduction)

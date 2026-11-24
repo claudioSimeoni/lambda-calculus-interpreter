@@ -1,3 +1,5 @@
+module Definitions where
+
 import Expr
 
 zero = readExpr "\\f.\\x.x"

@@ -4,20 +4,16 @@ import Data.Bool (Bool (False))
 import Expr
 import Test.Hspec
 
-<<<<<<< HEAD
 e1 = Eapp (Eabs "z" (Eabs "x" (Evar (Bound 1)))) (Evar (Free "x")) -- "(\\z.\\x.z x)"
 e2 = Eapp (Eabs "x" (Eapp (Evar (Bound 0)) (Evar (Bound 0)))) (Eabs "x" (Eapp (Evar (Bound 0)) (Evar (Bound 0)))) -- "(\\x.(x x) \\x.(x x))"
 e3 = Eapp (Eabs "x" (Eabs "x" (Evar (Bound 0)))) (Evar (Free "y")) -- "(\\x.\\x.x y)"
 e4 = Eapp (Eapp (Evar (Free "x")) (Evar (Free "x"))) (Evar (Free "x")) -- "((x x) x)"
 e5 = Eapp (Eabs "x" (Eapp (Evar (Bound 0)) (Evar (Free "y")))) (Evar (Free "z")) -- "(\\x.(x y) z)"
 
-=======
->>>>>>> 47e484c (feat: move to De Bruijn indices internal representation)
 spec :: Spec
 spec = do
-  describe "showExpr & readExpr" $ do
+  describe "showExpr" $ do
     it "test 1" $ do
-<<<<<<< HEAD
       showExpr e1 `shouldBe` "((\\z.\\a1.z) x)"
     it "test 2" $ do
       showExpr e2 `shouldBe` "((\\x.(x x)) \\x.(x x))"
@@ -44,14 +40,6 @@ spec = do
       reduce e4 `shouldBe` readExpr "((x x) x)"
       reduce e5 `shouldBe` readExpr "(z y)"
       reduce e1 == readExpr "\\x.x" `shouldBe` False
-=======
-      showExpr (readExpr "\\x.x") `shouldBe` "\\x.x"
->>>>>>> 47e484c (feat: move to De Bruijn indices internal representation)
-
-  -- you should add more thorough tests here
-  describe "reduce" $ do
-    it "test 1" $ do
-      reduce (readExpr "\\x.(x y0) x0") `shouldBe` Eapp (Evar (Free "x0")) (Evar (Free "y0"))
 
   describe "alphaEquivalence" $ do
     it "test 1" $ do
