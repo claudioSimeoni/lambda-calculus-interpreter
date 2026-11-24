@@ -32,7 +32,6 @@ exprFact =
       ++ show exprPrec
       ++ ") N))))"
 
-producto = readExpr $ "\\a.\\b.(a ((" ++ show sumo ++ ") b) (" ++ show zero ++ "))"
 number :: Int -> Expr
 number 0 = zero
 number n = fullReduce $ Eapp exprSucc (number (n - 1))

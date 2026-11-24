@@ -3,4 +3,4 @@ packages: .
 source-repository-package
     type: git
     location: https://github.com/jamesbamber/tiny-parser.git
-    tag: main
+    tag: e3d5b72e427ac74e82e06d464e65d3b87f792a7e
