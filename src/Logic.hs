@@ -28,6 +28,8 @@ exprNand = readExpr $ "\\a.\\b.(" ++ show (Eapp exprNot (Eapp (Eapp exprAnd (rea
 
 exprNor = readExpr $ "\\a.\\b.(" ++ show (Eapp exprNot (Eapp (Eapp exprOr (readExpr "a")) (readExpr "b"))) ++ ")"
 
+exprIf = readExpr $ "\\a.\\b.\\x.(x a b)"
+
 -- | useful for testing
 printLogicTable2 :: Expr -> [Expr]
 printLogicTable2 op = [fullReduce $ Eapp (Eapp op a) b | a <- [true, false], b <- [true, false]]

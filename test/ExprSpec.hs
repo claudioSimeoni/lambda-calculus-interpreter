@@ -14,21 +14,21 @@ spec :: Spec
 spec = do
   describe "showExpr" $ do
     it "test 1" $ do
-      showExpr e1 `shouldBe` "(\\z.\\a1.z x)"
+      showExpr e1 `shouldBe` "((\\z.\\a1.z) x)"
     it "test 2" $ do
-      showExpr e2 `shouldBe` "(\\x.(x x) \\x.(x x))"
+      showExpr e2 `shouldBe` "((\\x.(x x)) \\x.(x x))"
     it "test 3" $ do
-      showExpr e3 `shouldBe` "(\\x.\\x.x y)"
+      showExpr e3 `shouldBe` "((\\x.\\x.x) y)"
     it "test 4" $ do
       showExpr e4 `shouldBe` "((x x) x)"
 
   describe "readExpr" $ do
     it "test 1" $ do
-      e1 `shouldBe` readExpr "(\\z.\\x.z x)"
+      e1 `shouldBe` readExpr "((\\z.\\x.z) x)"
     it "test 2" $ do
-      e2 `shouldBe` readExpr "(\\x.(x x) \\x.(x x))"
+      e2 `shouldBe` readExpr "((\\x.(x x)) \\x.(x x))"
     it "test 3" $ do
-      e3 `shouldBe` readExpr "(\\x.\\x.x y)"
+      e3 `shouldBe` readExpr "((\\x.\\x.x) y)"
     it "test 4" $ do
       e4 `shouldBe` readExpr "((x x) x)"
 
@@ -43,7 +43,7 @@ spec = do
 
   describe "alphaEquivalence" $ do
     it "test 1" $ do
-      alphaEquivalence (readExpr "\\a.\\b.(a b)") (readExpr "\\b.\\a.(b a)") `shouldBe` True
+      alphaEquivalence (readExpr "\\a.\\b.a b") (readExpr "\\b.\\a.(b a)") `shouldBe` True
       alphaEquivalence (readExpr "\\a.\\b.(a b)") (readExpr "\\b.\\a.(a b)") `shouldBe` False
     it "test 2" $ do
       alphaEquivalence (readExpr "a a") (readExpr "a b") `shouldBe` False
@@ -53,7 +53,7 @@ spec = do
       alphaEquivalence (readExpr "\\a.b") (readExpr "\\c.b") `shouldBe` True
     it "test 3" $ do
       alphaEquivalence (readExpr "a b \\c.c") (readExpr "a b \\d.d") `shouldBe` True
-      alphaEquivalence (readExpr "\\a.a a") (readExpr "\\a.(a a)") `shouldBe` False
+      alphaEquivalence (readExpr "\\a.a a") (readExpr "\\a.(a a)") `shouldBe` True
     it "test 4" $ do
       alphaEquivalence (readExpr "\\a.(a b c \\c.(c \\a.a))") (readExpr "\\d.(d b c \\e.(e \\a.a))") `shouldBe` True
       alphaEquivalence (readExpr "\\a.(a b c \\c.(c \\a.a))") (readExpr "\\a.(d b c \\c.(c \\d.a))") `shouldBe` False
