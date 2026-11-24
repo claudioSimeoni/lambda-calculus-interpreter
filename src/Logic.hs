@@ -7,6 +7,7 @@ module Logic (
   exprXor,
   exprNand,
   exprNor,
+  exprIf,
 ) where
 
 import Expr
@@ -28,7 +29,7 @@ exprNand = readExpr $ "\\a.\\b.(" ++ show (Eapp exprNot (Eapp (Eapp exprAnd (rea
 
 exprNor = readExpr $ "\\a.\\b.(" ++ show (Eapp exprNot (Eapp (Eapp exprOr (readExpr "a")) (readExpr "b"))) ++ ")"
 
-exprIf = readExpr $ "\\a.\\b.\\x.(x a b)"
+exprIf = readExpr $ "\\x.\\a.\\b.(x a b)"
 
 -- | useful for testing
 printLogicTable2 :: Expr -> [Expr]
