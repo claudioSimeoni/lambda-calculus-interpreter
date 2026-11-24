@@ -1,14 +1,4 @@
-module Logic (
-  true,
-  false,
-  exprNot,
-  exprAnd,
-  exprOr,
-  exprXor,
-  exprNand,
-  exprNor,
-  exprIf,
-) where
+module Logic where
 
 import Expr
 

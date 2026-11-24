@@ -59,6 +59,7 @@ common warnings
 library
     hs-source-dirs: src
     exposed-modules: 
+        Definitions,
         Expr,
         Logic
     build-depends:
