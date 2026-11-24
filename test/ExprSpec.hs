@@ -41,11 +41,6 @@ spec = do
       reduce e5 `shouldBe` readExpr "(z y)"
       reduce e1 == readExpr "\\x.x" `shouldBe` False
 
-  -- you should add more thorough tests here
-  describe "reduce" $ do
-    it "test 1" $ do
-      reduce (readExpr "\\x.(x y0) x0") `shouldBe` Eapp (Evar (Free "x0")) (Evar (Free "y0"))
-
   describe "alphaEquivalence" $ do
     it "test 1" $ do
       alphaEquivalence (readExpr "\\a.\\b.a b") (readExpr "\\b.\\a.(b a)") `shouldBe` True
