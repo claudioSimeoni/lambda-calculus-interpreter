@@ -41,6 +41,12 @@ showExprInner (Eabs var expr) reprList binds freeRepr =
   (newRepr : xs)
     | not (Set.member var freeRepr) = var : reprList
     | otherwise = findAvailable reprList freeRepr
+showExprInner (Eapp e1@(Eabs var e3) e2) r binds freeRepr =
+  "(("
+    ++ showExprInner e1 r binds freeRepr
+    ++ ") "
+    ++ showExprInner e2 r binds freeRepr
+    ++ ")"
 showExprInner (Eapp e1 e2) r binds freeRepr =
   "("
     ++ showExprInner e1 r binds freeRepr
@@ -70,11 +76,11 @@ readExpr s = readExprInner s []
 -- | readExpr wraps this function
 readExprInner :: String -> [String] -> Expr
 readExprInner e binds
+  | head e == '\\' =
+      let (var, rest) = span (/= '.') e
+       in Eabs (tail var) (readExprInner (tail rest) (tail var : binds))
   | length es > 1 = foldl1 Eapp (map (`readExprInner` binds) es)
   | head eh == '(' = readExprInner (tail (init eh)) binds
-  | head eh == '\\' =
-      let (var, rest) = span (/= '.') eh
-       in Eabs (tail var) (readExprInner (tail rest) (tail var : binds))
   | otherwise =
       if len == length binds
         then Evar (Free eh)
