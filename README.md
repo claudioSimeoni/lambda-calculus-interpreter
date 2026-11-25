@@ -25,6 +25,14 @@ The lambda expression parsing all happens in the readExpr function, it is divide
 
 #### Problems and solutions 
 
+Initially we represented variables as strings. 
+
+Then we had to handle renaming, our first idea was to make variables pairs string-integer, inside the tree the variable maintains its string and then we have a function label which assigns to each variable an integer label which indicates to which lambda it is bound. This process of labeling was applied every time we had a reduction. 
+1. The first problem was that we were labeling only the subtree involved in the reduction. A variable linked to an outer abstraction was labeled as free (index 0). We fixed by labeling the whole tree before applying a reduction. 
+2. The second problem was we had collisions of identifiers. An already labeled expression such as this one `\b1.\b2.(b1 b2)` when reduced produced this `\b1.\b1.(b1 b1)`. We fixed by introducing a second map which counted for each string s how many variables with string s where already assigned with a label. 
+3. The third problem was that readExpr didn't catch labels. `x0` would have become a single string `x0` instead of `x` and label 0. We fixed by introducing a module var which handled the parsing of variables.
+4. Another problem was we were renaming free variables which is not allowed, from there we directly moved to De Bruijn indices.
+
 Since we where having so many problems with our labeling strategy, we looked online for a better representation of expressions and we found De Bruijn indices which solved all of the problems we had, making alpha equivalence way more intuitive and solving all the bugs of the label.
 
 Another mistake we made in the beginning: we thought that application had higher priority than abstraction, so this is one of the last things we fixed.
