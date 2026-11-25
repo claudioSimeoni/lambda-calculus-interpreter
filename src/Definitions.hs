@@ -9,10 +9,10 @@ exprSum = readExpr "\\a.\\b.\\f.\\x.((b f) ((a f) x))"
 exprProd = readExpr $ "\\a.\\b.(a ((" ++ show exprSum ++ ") b) (" ++ show zero ++ "))"
 exprYComb = readExpr "\\f.(\\x.(f (x x))) (\\x.(f (x x)))"
 
-exprIsZero = readExpr $ "\\n.n \\a." ++ show false ++ " " ++ show true
+exprIsZero = readExpr $ "\\n.n (\\a." ++ show false ++ ") (" ++ show true ++ ")"
 exprPair = readExpr "\\a.\\b.\\s.s a b"
 exprNextPair = fullReduce $ readExpr $ "\\m.(" ++ show exprPair ++ ") (m " ++ show false ++ ") ((" ++ show exprSucc ++ ") (m " ++ show false ++ "))"
-zerozero = fullReduce $ readExpr $ "(" ++ show exprPair ++ ") " ++ show zero ++ " " ++ show zero
+zerozero = fullReduce $ readExpr $ "(" ++ show exprPair ++ ") (" ++ show zero ++ ") (" ++ show zero ++ ")"
 
 exprPrec = fullReduce $ readExpr $ "\\n.(n (" ++ show exprNextPair ++ ") (" ++ show zerozero ++ ")) " ++ show true
 exprFact =
@@ -23,9 +23,9 @@ exprFact =
       ++ show exprIf
       ++ ") (("
       ++ show exprIsZero
-      ++ ") N) "
+      ++ ") N) ("
       ++ show (number 1)
-      ++ " (("
+      ++ ") (("
       ++ show exprProd
       ++ ") N "
       ++ "((F) (("
