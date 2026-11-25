@@ -61,10 +61,11 @@ library
     exposed-modules: 
         Definitions,
         Expr,
-        Logic
+        Logic,
     build-depends:
         base ^>= 4.22,
-        containers
+        containers,
+        tiny-parser,
     default-language: GHC2024
 
 test-suite tests
