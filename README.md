@@ -18,7 +18,9 @@ This makes **alpha equivalence** straight forward, since it is just about having
 
 #### Parser
 
-
+The lambda expression parsing all happens in the readExpr function, it is divided into two steps:
+    - The first step goes from a string to simple lambda expression AST, this is done with a monadic combinator parser taken from this  [library](https://github.com/jamesbamber/tiny-parser/). The result type is the parser's own expr, where variables are simply strings and there is no difference between bound and unbound variables.
+    - The second step computes free and bound variables and assigns De Bruijn indices, this is done by traversing the AST produced by the parser while keeping a list of used up identifiers, using the index in the list we can find the correct De Bruijn index.
 
 
 #### Problems and solutions 
